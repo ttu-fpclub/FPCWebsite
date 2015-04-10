@@ -1,3 +1,5 @@
+module Util where
+
 {-
  - I couldn't find a sequence function that worked on signals in
  - Elm's library, so I wrote one myself, which was easy since
@@ -6,8 +8,12 @@
  -}
 
 import Signal(Signal, constant, (~), (<~))
+import List(..)
 
 sequence : List (Signal a) -> Signal (List a)
 sequence xs = case xs of
                 [] -> constant []
                 (y :: ys) -> (::) <~ y ~ sequence ys
+
+ap : List (a -> b) -> List a -> List b
+ap fs xs = concatMap (\f -> map f xs) fs
