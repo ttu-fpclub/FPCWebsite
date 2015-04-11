@@ -3,7 +3,7 @@
  - There is no acknowledgement of victory nor is there a way to reset the game or put
  - the starting hole somewhere else. These are all things that I will add soon. I figure
  - this is just a neat little example of FRP that we could put on an examples page somewhere.
- - ~Silvio
+ - ~ Silvio
  -}
 
 import Peg.Peg(..)
