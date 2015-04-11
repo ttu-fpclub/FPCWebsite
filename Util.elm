@@ -17,3 +17,13 @@ sequence xs = case xs of
 
 ap : List (a -> b) -> List a -> List b
 ap fs xs = concatMap (\f -> map f xs) fs
+
+signum : number -> number
+signum x = if | x > 0 -> 1
+              | x < 0 -> -1
+              | otherwise -> 0
+
+listToMaybe : List a -> Maybe a
+listToMaybe xs = case xs of
+                   [] -> Nothing
+                   (x::_) -> Just x
