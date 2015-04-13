@@ -1,4 +1,4 @@
-module Util where
+module Util(sequence, ap, signum, listToMaybe) where
 
 {-
  - I couldn't find a sequence function that worked on signals in
