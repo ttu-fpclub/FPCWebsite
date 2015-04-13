@@ -2,14 +2,15 @@
  - The traditional "Cracker Barrel" triangle peg game. Currently, the game simply runs.
  - There is no acknowledgement of victory nor is there a way to reset the game or put
  - the starting hole somewhere else. These are all things that I will add soon. I figure
- - this is just a neat little example of FRP that we could put on an examples page somewhere.
+ - this is just a neat little example of FRP that we could put on an examples page
+ - somewhere.
  - ~ Silvio
  -}
 
 import Peg.Peg(..)
 import Util(sequence, listToMaybe)
 import List
-import List(concatMap, indexedMap, filter)
+import List(concatMap, indexedMap, filter, (::))
 import Text(asText)
 import Graphics.Collage(..)
 import Graphics.Element(Element, flow, down)
@@ -21,6 +22,7 @@ import Array(Array, get, set)
 import Maybe
 
 type GameState = Phase1 | Phase2
+type Event = NewClick (Maybe Int, Maybe Int) | Restart
 
 coords : List (Float, Float)
 coords = [(0.5, 0.0),
@@ -73,22 +75,28 @@ mostRecentClicksIndex = let distance (x0, y0) (x1, y1) = distance' (x1 - x0, y1 
                                     |> listToMaybe
                         in (\(c1, c2) -> (f c1, f c2)) <~ mostRecentClicks
 
+restartChannel : Channel ()
+restartChannel = channel ()
+
 currentState : Signal (GameState, Board)
-currentState = let f : (Maybe Int, Maybe Int) -> (GameState, Board) -> (GameState, Board)
-                   f (cNew, cOld) (gs, b) =
-                       case cNew of
-                         Nothing -> (Phase1, b)
-                         Just cNew' -> case gs of
-                                         Phase1 -> case get cNew' b of
-                                                     Nothing -> (Phase1, b)
-                                                     Just False -> (Phase1, b)
-                                                     Just True -> (Phase2, b)
-                                         Phase2 -> case cOld of
-                                                     Nothing -> (Phase1, b)
-                                                     Just cOld' -> case (get cNew' b, get cOld' b) of
-                                                                     (Just False, Just True) -> (Phase1, doJump (indexToCoord cOld') (indexToCoord cNew') b)
-                                                                     _ -> (Phase1, b)
-               in foldp f (Phase1, initialBoard) mostRecentClicksIndex
+currentState = let f : Event -> (GameState, Board) -> (GameState, Board)
+                   f ev (gs, b) = case ev of
+                                    NewClick (cOld, cNew) ->
+                                        case cNew of
+                                          Nothing -> (Phase1, b)
+                                          Just cNew' -> case gs of
+                                                          Phase1 -> case get cNew' b of
+                                                                      Nothing -> (Phase1, b)
+                                                                      Just False -> (Phase1, b)
+                                                                      Just True -> (Phase2, b)
+                                                          Phase2 -> case cOld of
+                                                                      Nothing -> (Phase1, b)
+                                                                      Just cOld' -> case (get cNew' b, get cOld' b) of
+                                                                                      (Just False, Just True) -> (Phase1, doJump (indexToCoord cOld') (indexToCoord cNew') b)
+                                                                                      _ -> (Phase1, b)
+                                    Restart ->
+                                        (Phase1, initialBoard)
+               in foldp f (Phase1, initialBoard) <| merge (NewClick <~ mostRecentClicksIndex) (always Restart <~ subscribe restartChannel)
 
 widthForN : Float -> Float
 widthForN = identity
@@ -102,16 +110,14 @@ game n = let width = widthForN n
              scaledCoords = List.map (\(x, y) -> (x * width, y * height))
                             <| List.map (\(x, y) -> (x - 0.5, 0.5 - y))
                             <| coords
-         in collage (floor n) (floor n) <~ (
-            sequence <|
-            List.concat [
-                     [constant
-                      <| rotate (degrees -30)
-                      <| filled (rgb 255 128 0)
-                      <| ngon 3 (n / 2)],
-                     indexedMap (singleCircle n)
-                      <| scaledCoords
-            ])
+             triangle = constant
+                        <| rotate (degrees (-30))
+                        <| filled (rgb 255 128 0)
+                        <| ngon 3 (n / 2)
+             circles = indexedMap (singleCircle n) scaledCoords
+             collageList = triangle :: circles
+             fullCollage = collage (floor n) (floor n) <~ sequence collageList
+         in fullCollage
 
 gameSize : Float
 gameSize = 300
