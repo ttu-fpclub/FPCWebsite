@@ -11,7 +11,7 @@ import Peg.Peg(..)
 import Util(sequence, listToMaybe)
 import List
 import List(concatMap, indexedMap, filter, (::))
-import Text(asText)
+import Text(asText, plainText)
 import Graphics.Collage(..)
 import Graphics.Element(Element, flow, down)
 import Color(..)
@@ -20,6 +20,7 @@ import Mouse
 import Array
 import Array(Array, get, set)
 import Maybe
+import Graphics.Input(button)
 
 type GameState = Phase1 | Phase2
 type Event = NewClick (Maybe Int, Maybe Int) | Restart
@@ -81,7 +82,7 @@ restartChannel = channel ()
 currentState : Signal (GameState, Board)
 currentState = let f : Event -> (GameState, Board) -> (GameState, Board)
                    f ev (gs, b) = case ev of
-                                    NewClick (cOld, cNew) ->
+                                    NewClick (cNew, cOld) ->
                                         case cNew of
                                           Nothing -> (Phase1, b)
                                           Just cNew' -> case gs of
@@ -104,6 +105,21 @@ widthForN = identity
 heightForN : Float -> Float
 heightForN n = sqrt 3 * n / 2
 
+statusText : Signal String
+statusText = let f : (GameState, Board) -> String -> String
+                 f (_, b) _ = if | getNumPegs b == 1 -> "You win!"
+                                 | getNumValidJumps b == 0 -> case getNumPegs b of
+                                                                0 -> "You broke physics."
+                                                                1 -> "You broke logic."
+                                                                2 -> "Pretty close..."
+                                                                3 -> "Eh, sort of close..."
+                                                                _ -> "Try again..."
+                                 | otherwise -> "Playing..."
+             in foldp f "Playing..." currentState
+
+statusField : Signal Element
+statusField = plainText <~ statusText
+
 game : Float -> Signal Element
 game n = let width = widthForN n
              height = heightForN n
@@ -117,7 +133,9 @@ game n = let width = widthForN n
              circles = indexedMap (singleCircle n) scaledCoords
              collageList = triangle :: circles
              fullCollage = collage (floor n) (floor n) <~ sequence collageList
-         in fullCollage
+             restartButton = button (send restartChannel ()) "Restart"
+             flowDown = flow down <~ sequence [fullCollage, statusField, constant restartButton]
+         in flowDown
 
 gameSize : Float
 gameSize = 300

@@ -4,7 +4,8 @@ import Array(Array, get, set, repeat)
 import Array
 import Maybe(withDefault)
 import Maybe
-import Util(signum)
+import Util(signum, ap)
+import List
 
 type alias Board = Array Bool
 
@@ -65,3 +66,11 @@ doJump ss dd b = if not <| canJump b ss dd then
                             set s0 False |>
                             set sd False |>
                             set d0 True
+
+getNumValidJumps : Board -> Int
+getNumValidJumps b = let f n m = canJump b (indexToCoord n) (indexToCoord m)
+                         len = Array.length b
+                     in List.foldl (\x y -> if x then y + 1 else y) 0 <| [f] `ap` [0..(len-1)] `ap` [0..(len-1)]
+
+getNumPegs : Board -> Int
+getNumPegs = Array.foldl (\x y -> if x then y + 1 else y) 0
