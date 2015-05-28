@@ -9,3 +9,4 @@ Step it up - Silvio's already made a game.
 -Projects Showcase
 -FP in Action section
 -Social Media page
+- Host the website on an Elm Server
