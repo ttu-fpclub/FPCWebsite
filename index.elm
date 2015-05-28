@@ -6,7 +6,7 @@ main = Markdown.toElement """
   # Welcome to the FPC Page
   * Projects
     - [This Website](https://github.com/ttu-fpclub/fpc-website/)
-    - [A Chemistry Aid](https://github.com/thepygoscelis/)
+    - [A Chemistry Aid](https://github.com/thepygoscelis/chemistryapp)
     - More to come soon.. - Charlie
   * Languages
     - [Racket](http://racket-lang.org/)
